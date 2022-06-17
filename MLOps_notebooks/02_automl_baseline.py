@@ -223,16 +223,6 @@ registered_model_version = mlflow.register_model(model_uri, churn_model_name)
 
 # COMMAND ----------
 
-model_name = "leo_mao_churn_demo"
-model_version = registered_model_version.version
-
-model_version
-
-# model = mlflow.pyfunc.load_model(model_uri=f"models:/{model_name}/{model_version}")
-# model.predict(input_X)
-
-# COMMAND ----------
-
 # MAGIC %md
 # MAGIC 
 # MAGIC ### Load from Model Registry

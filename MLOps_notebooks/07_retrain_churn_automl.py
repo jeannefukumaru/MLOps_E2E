@@ -15,6 +15,10 @@
 
 # COMMAND ----------
 
+# MAGIC %run ./99_retraining_utils
+
+# COMMAND ----------
+
 from databricks.feature_store import FeatureStoreClient
 
 # Set config for database name, file paths, and table names
@@ -31,6 +35,18 @@ model = databricks.automl.classify(features,
                                    target_col = "churn",
                                    data_dir= f"dbfs:{get_default_path()}/automl",
                                    timeout_minutes=5) 
+
+# COMMAND ----------
+
+# Uses Model Registry to register new model if it is better, deregisters current production model if its being replaced
+model_registration = ModelRegistration(experiment_name, experiment_title, model_name, metric, direction)
+model_registration.register_best(registration_message, logging_location, log_db, log_table)
+
+# COMMAND ----------
+
+from pyspark.sql import functions as F
+REGISTRY_TABLE = "airbnb.registry_status"
+display(spark.table(REGISTRY_TABLE).orderBy(F.col("training_time"))
 
 # COMMAND ----------
 
@@ -113,6 +129,10 @@ mlflow_call_endpoint('transition-requests/create', 'POST', json.dumps(staging_re
 comment = "This was the best model from AutoML, I think we can use it as a baseline."
 comment_body = {'name': model_details.name, 'version': model_details.version, 'comment': comment}
 mlflow_call_endpoint('comments/create', 'POST', json.dumps(comment_body))
+
+# COMMAND ----------
+
+
 
 # COMMAND ----------
 

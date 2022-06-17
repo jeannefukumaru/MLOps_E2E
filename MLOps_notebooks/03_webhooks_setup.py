@@ -26,6 +26,11 @@
 
 # COMMAND ----------
 
+dbutils.widgets.text(name='staging_job_id', defaultValue='1')
+dbutils.widgets.text(name='production_job_id', defaultValue='2')
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ### Create Webhooks
 # MAGIC 
@@ -86,8 +91,8 @@ import json
 host = "https://" + dbutils.notebook.entry_point.getDbutils().notebook().getContext().tags().get("browserHostName").get()
 token = dbutils.notebook.entry_point.getDbutils().notebook().getContext().apiToken().get()
 
-# change it! Create a job based on 05_ops_validation notebook
-job_id = "102449080967672"
+# change it! Create a job based on 05_staging_validation notebook
+staging_job_id = dbutils.widgets.get("staging_job_id")
 
 # "events": ["TRANSITION_REQUEST_CREATED"],
 
@@ -97,17 +102,13 @@ trigger_job = json.dumps({
   "description": "Trigger the ops_validation job when a model is moved to staging.",
   "status": "ACTIVE",
   "job_spec": {
-    "job_id": job_id,    # This is our 05_ops_validation notebook
+    "job_id": staging_job_id,    # This is our 05_staging_validation notebook
     "workspace_url": host,
     "access_token": token
   }
 })
 
 mlflow_call_endpoint("registry-webhooks/create", method = "POST", body = trigger_job)
-
-# COMMAND ----------
-
-job_id
 
 # COMMAND ----------
 
@@ -183,12 +184,14 @@ else:
 
 #    "events": ["MODEL_VERSION_TRANSITIONED_STAGE"],
 
+production_job_id = dbutils.widgets.get('production_job_id')
+
 trigger_job = json.dumps({
   "model_name": churn_model_name,
   "events": ["TRANSITION_REQUEST_TO_PRODUCTION_CREATED"],
   "description": "Trigger the ops_validation job when a model is moved to staging to production.",
   "job_spec": {
-    "job_id": job_id,
+    "job_id": production_job_id,
     "workspace_url": host,
     "access_token": token
   }
@@ -239,10 +242,6 @@ mlflow_call_endpoint("registry-webhooks/list", method = "GET", body = list_model
 
 # COMMAND ----------
 
-# new job Id: 1471546
-
-# COMMAND ----------
-
 # MAGIC %md
 # MAGIC ##### Delete
 
@@ -251,7 +250,7 @@ mlflow_call_endpoint("registry-webhooks/list", method = "GET", body = list_model
 # Remove a webhook
 mlflow_call_endpoint("registry-webhooks/delete",
                      method="DELETE",
-                     body = json.dumps({'id': '889f4bd3ee234e33973bb169db6c3f37'}))
+                     body = json.dumps({'id': 'f814b3d642e74858ad4e61b91ba1ba60'}))
 
 # COMMAND ----------
 

@@ -34,15 +34,7 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC #### Promote to Registry
-# MAGIC ```
-# MAGIC model_uri = f"runs:/{mlflow_run.info.run_id}/model"
-# MAGIC registered_model_version = mlflow.register_model(model_uri, churn_model_name)
-# MAGIC ```
-
-# COMMAND ----------
-
-# MAGIC %md
+# MAGIC In notebook `02_automl_baseline` we have registered our model to Mlflow Model Registry.
 # MAGIC At this point the model will be in `None` stage.  Let's update the description before moving it to `Staging`.
 
 # COMMAND ----------
@@ -52,32 +44,33 @@
 
 # COMMAND ----------
 
-churn_model_name
+dbutils.widgets.text('model_name', defaultValue='churn_model_name')
+dbutils.widgets.text('model_version', defaultValue='1')
+dbutils.widgets.text('model_description', defaultValue='"This model predicts whether a customer will churn using features from the ibm_telco_churn database.  It is used to update the Telco Churn Dashboard in SQL Analytics."')
+dbutils.widgets.text('comment', defaultValue="This was the best model from AutoML, I think we can use it as a baseline.")
+
+# COMMAND ----------
+
+churn_model_name = dbutils.widgets.get('model_name')
+model_version = dbutils.widgets.get('model_version')
 
 # COMMAND ----------
 
 from mlflow.tracking.client import MlflowClient
 
 client = MlflowClient()
-model_details = client.get_model_version(name=churn_model_name, version=1)
+model_details = client.get_model_version(name=churn_model_name, version=model_version)
 
 # COMMAND ----------
 
 from mlflow.tracking.client import MlflowClient
 
-# update the model with a new version
-client = MlflowClient()
-model_details = client.get_model_version(name=churn_model_name, version=1)
+description = dbutils.widgets.get("model_description")
 
+# update model with description
 client.update_registered_model(
   name=model_details.name,
-  description="This model predicts whether a customer will churn using features from the ibm_telco_churn database.  It is used to update the Telco Churn Dashboard in SQL Analytics."
-)
-
-client.update_model_version(
-  name=model_details.name,
-  version=model_details.version,
-  description="This model version was built using sklearn's LogisticRegression."
+  description=description
 )
 
 # COMMAND ----------
@@ -126,7 +119,7 @@ staging_request
 # COMMAND ----------
 
 # Leave a comment for the ML engineer who will be reviewing the tests
-comment = "This was the best model from AutoML, I think we can use it as a baseline."
+comment = dbutils.widgets.get("comment")
 comment_body = {'name': model_details.name, 'version': model_details.version, 'comment': comment}
 mlflow_call_endpoint('comments/create', 'POST', json.dumps(comment_body))
 
